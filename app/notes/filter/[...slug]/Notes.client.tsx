@@ -9,12 +9,11 @@ import css from './Notes.module.css';
 import SearchBox from '@/components/SearchBox/SearchBox';
 import Pagination from '@/components/Pagination/Pagination';
 import NoteList from '@/components/NoteList/NoteList';
-import NoteModal from '@/components/Modal/Modal';
-import NoteForm from '@/components/NoteForm/NoteForm';
 import Loading from '@/components/Loading/Loading';
 import ErrorMessage from '@/components/ErrorMessage/ErrorMessage';
 
 import { fetchNotes, type FetchNotesResponse } from '@/lib/api';
+import Link from 'next/link';
 
 interface NotesClientProps {
   initialData: FetchNotesResponse;
@@ -22,7 +21,6 @@ interface NotesClientProps {
 }
 
 export default function NotesClient({ initialData, initialTag }: NotesClientProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [debouncedSearchValue] = useDebounce(searchValue, 700);
   const [currentPage, setCurrentPage] = useState(1);
@@ -63,9 +61,9 @@ if (!data) return null;
             onPageChange={setCurrentPage}
           />
         )}
-        <button className={css.button} onClick={() => setIsModalOpen(true)}>
-          Create Note +
-        </button>
+        <Link className={css.button} href="/notes/action/create">
+          Create note +
+        </Link>
       </div>
 
       {isFetching && <Loading />}
@@ -79,12 +77,6 @@ if (!data) return null;
             <p>No notes found. Create your first note!</p>
           </div>
         )
-      )}
-
-      {isModalOpen && (
-        <NoteModal onClose={() => setIsModalOpen(false)}>
-          <NoteForm onSuccess={() => setIsModalOpen(false)} />
-        </NoteModal>
       )}
     </div>
   );
