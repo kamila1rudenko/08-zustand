@@ -3,19 +3,33 @@
 import { useRouter } from 'next/navigation';
 import css from './NoteForm.module.css';
 import { useNoteStore } from '@/lib/store/noteStore';
-import type { NoteTag } from '@/types/note';
-
+import type { NoteTag, CreateNotePayload, Note } from '@/types/note';
+import { createNote } from '@/lib/api';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export default function NoteForm() {
   const router = useRouter();
-  const { draft, setDraft, createNote } = useNoteStore();
+  const queryClient = useQueryClient();
+  const { draft, setDraft, clearDraft } = useNoteStore();
 
+  const { mutate, isPending } = useMutation<Note, Error, CreateNotePayload>({
+    mutationFn: createNote,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+      clearDraft();
+      router.back();
+    },
+  });
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    await createNote(formData);
-    router.back();
+    const newNote: CreateNotePayload = {
+      title: String(formData.get('title') ?? ''),
+      content: String(formData.get('content') ?? ''),
+      tag: (formData.get('tag') ?? 'Todo') as NoteTag,
+    };
+    mutate(newNote);
   };
 
   return (
@@ -63,14 +77,10 @@ export default function NoteForm() {
       </div>
 
       <div className={css.actions}>
-        <button type="submit" className={css.submitButton}>
-          Create Note
+        <button type="submit" className={css.submitButton} disabled={isPending}>
+          {isPending ? 'Creating...' : 'Create Note'}
         </button>
-        <button
-          type="button"
-          className={css.cancelButton}
-          onClick={() => router.back()}
-        >
+        <button type="button" className={css.cancelButton} onClick={() => router.back()}>
           Cancel
         </button>
       </div>
